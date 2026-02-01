@@ -1,0 +1,35 @@
+{
+  "name": "yoink-dev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.87",
+    "@iconify-json/simple-icons": "^1.2.68",
+    "@libsql/client": "^0.17.0",
+    "@nuxt/hints": "1.0.0-alpha.6",
+    "@nuxt/ui": "^4.4.0",
+    "@openrouter/sdk": "^0.5.1",
+    "@shikijs/core": "^3.22.0",
+    "drizzle-kit": "^0.31.8",
+    "drizzle-orm": "^0.45.1",
+    "nuxt": "^4.3.0",
+    "prettier": "^3.8.1",
+    "shiki": "^3.22.0",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.13.0",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.4"
+  }
+}

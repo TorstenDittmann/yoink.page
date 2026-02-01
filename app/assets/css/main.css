@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: 'Public Sans', sans-serif;
+
+  --color-green-50: #FFFBEB;
+  --color-green-100: #FEF3C7;
+  --color-green-200: #FDE68A;
+  --color-green-300: #FCD34D;
+  --color-green-400: #FBBF24;
+  --color-green-500: #F59E0B;
+  --color-green-600: #D97706;
+  --color-green-700: #B45309;
+  --color-green-800: #92400E;
+  --color-green-900: #78350F;
+  --color-green-950: #451A03;
+}
