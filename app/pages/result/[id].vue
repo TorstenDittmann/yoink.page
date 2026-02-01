@@ -29,11 +29,22 @@ onMounted(() => {
   fetchConversion()
 })
 
+const title = `Shared Result - yoink`
+const description = `View this UI screenshot converted to clean code on yoink.page`
+
 useHead({
-  title: 'Shared Result - yoink',
+  title,
   meta: [
+    { name: 'description', content: description },
     { property: 'og:title', content: 'UI Screenshot converted to code' },
-    { property: 'og:description', content: 'View this UI conversion on fromscreen.dev' }
+    { property: 'og:description', content: description },
+    { property: 'og:url', content: `https://yoink.page/result/${id}` },
+    { property: 'og:image', content: 'https://yoink.page/og-image.png' },
+    { property: 'og:type', content: 'article' },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'UI Screenshot converted to code' },
+    { name: 'twitter:description', content: description },
+    { name: 'twitter:image', content: 'https://yoink.page/og-image.png' }
   ]
 })
 </script>
