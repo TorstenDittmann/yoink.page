@@ -239,16 +239,25 @@ watch(isResultsVisible, (visible) => {
           />
 
           <!-- Streaming States Container -->
-          <div v-if="isStreaming" class="streaming-container">
+          <div
+            v-if="isStreaming"
+            class="streaming-container"
+          >
             <!-- Image Processing -->
-            <Transition name="fade-scale" mode="out-in">
+            <Transition
+              name="fade-scale"
+              mode="out-in"
+            >
               <div
                 v-if="!hasReceivedContent"
                 key="processing"
                 class="processing-state"
               >
                 <div class="scanning-container">
-                  <img :src="uploadedImage" class="uploaded-image">
+                  <img
+                    :src="uploadedImage"
+                    class="uploaded-image"
+                  >
                   <div class="scanner-line" />
                   <div class="scanner-glow" />
                 </div>
@@ -272,14 +281,23 @@ watch(isResultsVisible, (visible) => {
                 </div>
 
                 <div class="streaming-output">
-                  <div ref="outputContainer" class="output-container">
-                    <pre class="raw-output">{{ generatedHtml }}<span v-if="isStreaming" class="typing-cursor" /></pre>
+                  <div
+                    ref="outputContainer"
+                    class="output-container"
+                  >
+                    <pre class="raw-output">{{ generatedHtml }}<span
+v-if="isStreaming"
+                                                                     class="typing-cursor"
+                    /></pre>
                   </div>
                 </div>
 
                 <div class="streaming-stats">
                   <span class="stat-item">{{ receivedChars.toLocaleString() }} characters generated</span>
-                  <span v-if="conversionId" class="stat-item">Conversion ID: {{ conversionId.slice(0, 8) }}...</span>
+                  <span
+                    v-if="conversionId"
+                    class="stat-item"
+                  >Conversion ID: {{ conversionId.slice(0, 8) }}...</span>
                 </div>
               </div>
             </Transition>

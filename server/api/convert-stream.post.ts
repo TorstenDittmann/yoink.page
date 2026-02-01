@@ -3,6 +3,7 @@ import { getDb } from '~/lib/db'
 import { conversions } from '~/lib/schema'
 import { format } from 'prettier'
 import { aj } from '~/lib/arcjet'
+import { OpenRouter } from '@openrouter/sdk'
 
 const convertSchema = z.object({
   image: z.string().regex(/^data:image\/[a-zA-Z]+;base64,/)
@@ -17,14 +18,19 @@ Rules:
 - Make it responsive.
 - Return ONLY the code. No markdown fences, no explanation.
 - No JavaScript
-- Output valid HTML with Tailwind classes.`
+- Output valid HTML with Tailwind classes.
+- Use standard Tailwind CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Include Bunny Fonts in the head: <link rel="stylesheet" href="https://fonts.bunny.net/css2?family=Inter:wght@400;500;600;700&display=swap">
+- Apply fonts with Tailwind's font-['FontName'] syntax: font-['Inter'] or font-['Space_Grotesk']
+- For custom colors, use Tailwind's arbitrary values: bg-[#f59e0a], text-[#1a1a1a]
+- Common Bunny Fonts: Inter, Roboto, Playfair Display, Space Grotesk, DM Sans, Plus Jakarta Sans`
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   console.log('[CONVERT-STREAM] Request started at:', new Date().toISOString())
 
-  // Check Arcjet rate limit
-  const decision = await aj.protect(event.node.req)
+  // Check Arcjet rate limit (deduct 1 token per conversion)
+  const decision = await aj.protect(event.node.req, { requested: 1 })
   if (decision.isDenied()) {
     throw createError({ statusCode: 429, statusMessage: 'Rate limit exceeded. Try again later.' })
   }
@@ -41,8 +47,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, statusMessage: 'API key not configured' })
     }
 
-    const model = config.openrouterModel
-    const resolvedModel = typeof model === 'string' && model.trim() ? model : 'moonshotai/kimi-k2.5'
+    const model = 'moonshotai/kimi-k2.5';
 
     // Set up SSE headers
     setHeader(event, 'Content-Type', 'text/event-stream')
@@ -55,70 +60,40 @@ export default defineEventHandler(async (event) => {
     // Send initial event with ID
     event.node.res.write(`data: ${JSON.stringify({ type: 'id', id: conversionId })}\n\n`)
 
-    // Call OpenRouter API with streaming
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': config.public.siteUrl || 'http://localhost:3000',
-        'X-Title': 'fromscreen.dev'
-      },
-      body: JSON.stringify({
-        model: resolvedModel,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: SYSTEM_PROMPT },
-              {
-                type: 'image_url',
-                image_url: { url: `data:image/png;base64,${base64Data}` }
-              }
-            ]
-          }
-        ],
-        stream: true
-      })
+    // Initialize OpenRouter client
+    const client = new OpenRouter({
+      apiKey,
+      xTitle: 'yoink.page',
+      httpReferer: 'https://yoink.page'
     })
 
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`OpenRouter API error: ${error}`)
-    }
-
-    const reader = response.body?.getReader()
-    if (!reader) {
-      throw new Error('No response body')
-    }
+    // Call OpenRouter API with streaming using SDK
+    const stream = await client.chat.send({
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: SYSTEM_PROMPT },
+            {
+              type: 'image_url',
+              imageUrl: { url: `data:image/png;base64,${base64Data}` }
+            }
+          ]
+        }
+      ],
+      stream: true
+    })
 
     let fullHtml = ''
-    const decoder = new TextDecoder()
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const chunk = decoder.decode(value, { stream: true })
-      const lines = chunk.split('\n')
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6)
-          if (data === '[DONE]') continue
-
-          try {
-            const parsed = JSON.parse(data)
-            const content = parsed.choices?.[0]?.delta?.content || ''
-            if (content) {
-              fullHtml += content
-              // Send chunk to client
-              event.node.res.write(`data: ${JSON.stringify({ type: 'chunk', content })}\n\n`)
-            }
-          } catch {
-            // Ignore parse errors for incomplete chunks
-          }
-        }
+    // Process the streaming response
+    for await (const chunk of stream) {
+      const content = chunk.choices?.[0]?.delta?.content || ''
+      if (content) {
+        fullHtml += content
+        // Send chunk to client
+        event.node.res.write(`data: ${JSON.stringify({ type: 'chunk', content })}\n\n`)
       }
     }
 

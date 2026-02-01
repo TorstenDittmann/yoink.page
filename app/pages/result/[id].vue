@@ -71,22 +71,56 @@ useHead({
       class="result-container"
     >
       <div class="result-header">
-        <NuxtLink to="/" class="back-link">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <NuxtLink
+          to="/"
+          class="back-link"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
         </NuxtLink>
 
         <div class="view-toggle">
-          <button :class="{ active: activeView === 'preview' }" @click="activeView = 'preview'">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button
+            :class="{ active: activeView === 'preview' }"
+            @click="activeView = 'preview'"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
+              <circle
+                cx="12"
+                cy="12"
+                r="3"
+              />
             </svg>
             Preview
           </button>
-          <button :class="{ active: activeView === 'code' }" @click="activeView = 'code'">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button
+            :class="{ active: activeView === 'code' }"
+            @click="activeView = 'code'"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <polyline points="16 18 22 12 16 6" />
               <polyline points="8 6 2 12 8 18" />
             </svg>
@@ -94,9 +128,26 @@ useHead({
           </button>
         </div>
 
-        <button class="action-btn" @click="copyUrl">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+        <button
+          class="action-btn"
+          @click="copyUrl"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect
+              x="9"
+              y="9"
+              width="13"
+              height="13"
+              rx="2"
+              ry="2"
+            />
             <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
           </svg>
           Copy
@@ -108,7 +159,7 @@ useHead({
           class="preview-panel"
           :class="{ active: activeView === 'preview' }"
         >
-          <LivePreview :html="conversion.htmlOutput" />
+          <LivePreview :id="conversion.id" />
         </div>
         <div
           class="code-panel"
