@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { getDb } from '~/lib/db'
 import { conversions } from '~/lib/schema'
 import { format } from 'prettier'
+import { aj } from '~/lib/arcjet'
 
 const convertSchema = z.object({
   image: z.string().regex(/^data:image\/[a-zA-Z]+;base64,/)
@@ -21,6 +22,12 @@ Rules:
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   console.log('[CONVERT-STREAM] Request started at:', new Date().toISOString())
+
+  // Check Arcjet rate limit
+  const decision = await aj.protect(event.node.req)
+  if (decision.isDenied()) {
+    throw createError({ statusCode: 429, statusMessage: 'Rate limit exceeded. Try again later.' })
+  }
 
   try {
     const body = await readBody(event)

@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     openrouterModel: process.env.NUXT_OPENROUTER_MODEL,
     tursoUrl: process.env.NUXT_TURSO_URL,
     tursoToken: process.env.NUXT_TURSO_TOKEN,
+    arcjetKey: process.env.NUXT_ARCJET_KEY,
     public: {
       siteUrl: process.env.NUXT_SITE_URL
     }

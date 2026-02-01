@@ -11,6 +11,8 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@arcjet/node": "^1.0.0",
+    "@arcjet/nuxt": "1.0.0",
     "@iconify-json/lucide": "^1.2.87",
     "@iconify-json/simple-icons": "^1.2.68",
     "@libsql/client": "^0.17.0",
