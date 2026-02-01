@@ -223,7 +223,7 @@ watch(isResultsVisible, (visible) => {
         </h1>
 
         <p class="hero-subtitle">
-          Drop any UI screenshot. Get clean, production-ready code in seconds.
+          Drop any UI screenshot. Get your copy in seconds.
           <br>
           <span class="powered-by">Powered by Kimi K2.5 Vision</span>
         </p>

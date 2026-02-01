@@ -16,7 +16,7 @@ useHead({
 })
 
 const title = 'yoink - Screenshot to Code'
-const description = 'Transform your UI screenshots into clean, production-ready code.'
+const description = 'Transform your UI screenshots into ready-to-use code.'
 
 useSeoMeta({
   title,
