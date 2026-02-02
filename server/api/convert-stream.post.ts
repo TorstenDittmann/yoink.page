@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, statusMessage: 'API key not configured' })
     }
 
-    const model = 'moonshotai/kimi-k2.5';
+    const model = 'moonshotai/kimi-k2.5'
 
     // Set up SSE headers
     setHeader(event, 'Content-Type', 'text/event-stream')
@@ -70,6 +70,12 @@ export default defineEventHandler(async (event) => {
     // Call OpenRouter API with streaming using SDK
     const stream = await client.chat.send({
       model,
+      reasoning: {
+        effort: 'medium'
+      },
+      provider: {
+        order: ['fireworks']
+      },
       messages: [
         {
           role: 'user',
