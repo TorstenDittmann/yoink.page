@@ -70,6 +70,9 @@ export default defineEventHandler(async (event) => {
     // Call OpenRouter API with streaming using SDK
     const stream = await client.chat.send({
       model,
+      provider: {
+        sort: 'throughput'
+      },
       messages: [
         {
           role: 'user',
