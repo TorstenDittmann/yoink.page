@@ -1,214 +1,229 @@
 <script setup lang="ts">
 interface StreamMessage {
-  type: 'id' | 'chunk' | 'done' | 'error'
-  id?: string
-  content?: string
-  html?: string
-  message?: string
+  type: "id" | "chunk" | "done" | "error";
+  id?: string;
+  content?: string;
+  html?: string;
+  message?: string;
 }
 
 interface FetchError {
-  statusMessage?: string
-  message?: string
+  statusMessage?: string;
+  message?: string;
 }
 
-const uploadedImage = ref('')
-const generatedHtml = ref('')
-const isLoading = ref(false)
-const error = ref('')
-const isResultsVisible = ref(false)
-const activeView = ref<'preview' | 'code'>('preview')
-const conversionId = ref('')
+const uploadedImage = ref("");
+const generatedHtml = ref("");
+const isLoading = ref(false);
+const error = ref("");
+const isResultsVisible = ref(false);
+const activeView = ref<"preview" | "code">("preview");
+const conversionId = ref("");
 
 // Streaming progress tracking
-const streamProgress = ref(0)
-const receivedChars = ref(0)
-const estimatedTotalChars = ref(5000) // Initial estimate, will adjust
-const isStreaming = ref(false)
-const hasReceivedContent = ref(false)
+const streamProgress = ref(0);
+const receivedChars = ref(0);
+const estimatedTotalChars = ref(5000); // Initial estimate, will adjust
+const isStreaming = ref(false);
+const hasReceivedContent = ref(false);
 
-const router = useRouter()
+const router = useRouter();
 
 // Update page title during streaming
 watch([isStreaming, hasReceivedContent], ([streaming, hasContent]) => {
   if (streaming && hasContent) {
-    document.title = 'Generating code... - yoink'
+    document.title = "Generating code... - yoink";
   } else if (streaming && !hasContent) {
-    document.title = 'Processing image... - yoink'
+    document.title = "Processing image... - yoink";
   } else {
-    document.title = 'yoink - Screenshot to Code'
+    document.title = "yoink - Screenshot to Code";
   }
-})
+});
 
 const isFetchError = (err: unknown): err is FetchError => {
-  return typeof err === 'object' && err !== null && ('statusMessage' in err || 'message' in err)
-}
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    ("statusMessage" in err || "message" in err)
+  );
+};
 
 const handleUpload = async (image: string) => {
-  console.log('[CLIENT] handleUpload called, image length:', image?.length)
-  uploadedImage.value = image
-  isLoading.value = true
-  isStreaming.value = true
-  error.value = ''
-  isResultsVisible.value = false
-  conversionId.value = ''
-  generatedHtml.value = ''
-  streamProgress.value = 0
-  receivedChars.value = 0
-  estimatedTotalChars.value = 5000
-  hasReceivedContent.value = false
+  console.log("[CLIENT] handleUpload called, image length:", image?.length);
+  uploadedImage.value = image;
+  isLoading.value = true;
+  isStreaming.value = true;
+  error.value = "";
+  isResultsVisible.value = false;
+  conversionId.value = "";
+  generatedHtml.value = "";
+  streamProgress.value = 0;
+  receivedChars.value = 0;
+  estimatedTotalChars.value = 5000;
+  hasReceivedContent.value = false;
 
   try {
-    console.log('[CLIENT] Starting streaming API call to /api/convert-stream')
+    console.log("[CLIENT] Starting streaming API call to /api/convert-stream");
 
-    const response = await fetch('/api/convert-stream', {
-      method: 'POST',
+    const response = await fetch("/api/convert-stream", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ image })
-    })
+      body: JSON.stringify({ image }),
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const reader = response.body?.getReader()
+    const reader = response.body?.getReader();
     if (!reader) {
-      throw new Error('No response body available')
+      throw new Error("No response body available");
     }
 
-    const decoder = new TextDecoder()
-    let buffer = ''
+    const decoder = new TextDecoder();
+    let buffer = "";
 
     while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+      const { done, value } = await reader.read();
+      if (done) break;
 
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
 
       for (const line of lines) {
-        if (line.trim() === '') continue
-        if (!line.startsWith('data: ')) continue
+        if (line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
 
         try {
-          const data: StreamMessage = JSON.parse(line.slice(6))
-          console.log('[CLIENT] Received message:', data.type)
+          const data: StreamMessage = JSON.parse(line.slice(6));
+          console.log("[CLIENT] Received message:", data.type);
 
           switch (data.type) {
-            case 'id':
+            case "id":
               if (data.id) {
-                conversionId.value = data.id
-                console.log('[CLIENT] Conversion ID received:', data.id)
+                conversionId.value = data.id;
+                console.log("[CLIENT] Conversion ID received:", data.id);
               }
-              break
-            case 'chunk':
+              break;
+            case "chunk":
               if (data.content) {
-                generatedHtml.value += data.content
-                receivedChars.value += data.content.length
-                hasReceivedContent.value = true
+                generatedHtml.value += data.content;
+                receivedChars.value += data.content.length;
+                hasReceivedContent.value = true;
                 // Estimate progress based on received chars vs expected total
                 // We expect HTML to be roughly 3-5x the size of a typical response
-                streamProgress.value = Math.min(95, Math.round((receivedChars.value / estimatedTotalChars.value) * 100))
-                scrollToBottom()
+                streamProgress.value = Math.min(
+                  95,
+                  Math.round(
+                    (receivedChars.value / estimatedTotalChars.value) * 100,
+                  ),
+                );
+                scrollToBottom();
               }
-              break
-            case 'done':
-              streamProgress.value = 100
+              break;
+            case "done":
+              streamProgress.value = 100;
               if (data.html) {
-                generatedHtml.value = data.html
+                generatedHtml.value = data.html;
               }
-              console.log('[CLIENT] Streaming complete, redirecting to result page')
+              console.log(
+                "[CLIENT] Streaming complete, redirecting to result page",
+              );
               // Redirect to result page after a brief delay to show 100% completion
               setTimeout(() => {
                 if (conversionId.value) {
-                  router.push(`/result/${conversionId.value}`)
+                  router.push(`/result/${conversionId.value}`);
                 }
-              }, 500)
-              break
-            case 'error':
-              throw new Error(data.message || 'Conversion failed')
+              }, 500);
+              break;
+            case "error":
+              throw new Error(data.message || "Conversion failed");
           }
         } catch (parseErr) {
-          console.error('[CLIENT] Failed to parse stream message:', line, parseErr)
+          console.error(
+            "[CLIENT] Failed to parse stream message:",
+            line,
+            parseErr,
+          );
         }
       }
     }
 
     if (buffer.trim()) {
-      const line = buffer.trim()
-      if (line.startsWith('data: ')) {
+      const line = buffer.trim();
+      if (line.startsWith("data: ")) {
         try {
-          const data: StreamMessage = JSON.parse(line.slice(6))
-          if (data.type === 'done' && data.html) {
-            generatedHtml.value = data.html
-            streamProgress.value = 100
+          const data: StreamMessage = JSON.parse(line.slice(6));
+          if (data.type === "done" && data.html) {
+            generatedHtml.value = data.html;
+            streamProgress.value = 100;
             if (conversionId.value) {
-              router.push(`/result/${conversionId.value}`)
+              router.push(`/result/${conversionId.value}`);
             }
-          } else if (data.type === 'error') {
-            throw new Error(data.message || 'Conversion failed')
+          } else if (data.type === "error") {
+            throw new Error(data.message || "Conversion failed");
           }
         } catch (parseErr) {
-          console.error('[CLIENT] Failed to parse final buffer:', parseErr)
+          console.error("[CLIENT] Failed to parse final buffer:", parseErr);
         }
       }
     }
   } catch (err: unknown) {
-    console.error('[CLIENT] API call failed:', err)
+    console.error("[CLIENT] API call failed:", err);
     error.value = isFetchError(err)
-      ? (err.statusMessage || err.message || 'Conversion failed')
-      : 'Conversion failed'
+      ? err.statusMessage || err.message || "Conversion failed"
+      : "Conversion failed";
   } finally {
-    isLoading.value = false
-    isStreaming.value = false
-    console.log('[CLIENT] handleUpload completed')
+    isLoading.value = false;
+    isStreaming.value = false;
+    console.log("[CLIENT] handleUpload completed");
   }
-}
+};
 
 const share = () => {
   if (conversionId.value) {
-    router.push(`/result/${conversionId.value}`)
+    router.push(`/result/${conversionId.value}`);
   }
-}
+};
 
 const reset = () => {
-  uploadedImage.value = ''
-  generatedHtml.value = ''
-  error.value = ''
-  isResultsVisible.value = false
-  isStreaming.value = false
-  conversionId.value = ''
-  streamProgress.value = 0
-  receivedChars.value = 0
-}
+  uploadedImage.value = "";
+  generatedHtml.value = "";
+  error.value = "";
+  isResultsVisible.value = false;
+  isStreaming.value = false;
+  conversionId.value = "";
+  streamProgress.value = 0;
+  receivedChars.value = 0;
+};
 
 const scrollToResults = () => {
   nextTick(() => {
-    const resultsEl = document.querySelector('.results-section')
+    const resultsEl = document.querySelector(".results-section");
     if (resultsEl) {
-      resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  })
-}
+  });
+};
 
-const outputContainer = ref<HTMLElement | null>(null)
+const outputContainer = ref<HTMLElement | null>(null);
 
 const scrollToBottom = () => {
   nextTick(() => {
     if (outputContainer.value) {
-      outputContainer.value.scrollTop = outputContainer.value.scrollHeight
+      outputContainer.value.scrollTop = outputContainer.value.scrollHeight;
     }
-  })
-}
+  });
+};
 
 watch(isResultsVisible, (visible) => {
   if (visible) {
-    scrollToResults()
+    scrollToResults();
   }
-})
+});
 </script>
 
 <template>
@@ -218,13 +233,11 @@ watch(isResultsVisible, (visible) => {
       <div class="grid-bg" />
 
       <div class="hero-content">
-        <h1 class="hero-title">
-          yoink.page
-        </h1>
+        <h1 class="hero-title">yoink.page</h1>
 
         <p class="hero-subtitle">
           Drop any UI screenshot. Get your copy in seconds.
-          <br>
+          <br />
           <span class="powered-by">Powered by Kimi K2.5 Vision</span>
         </p>
       </div>
@@ -239,25 +252,16 @@ watch(isResultsVisible, (visible) => {
           />
 
           <!-- Streaming States Container -->
-          <div
-            v-if="isStreaming"
-            class="streaming-container"
-          >
+          <div v-if="isStreaming" class="streaming-container">
             <!-- Image Processing -->
-            <Transition
-              name="fade-scale"
-              mode="out-in"
-            >
+            <Transition name="fade-scale" mode="out-in">
               <div
                 v-if="!hasReceivedContent"
                 key="processing"
                 class="processing-state"
               >
                 <div class="scanning-container">
-                  <img
-                    :src="uploadedImage"
-                    class="uploaded-image"
-                  >
+                  <img :src="uploadedImage" class="uploaded-image" />
                   <div class="scanner-line" />
                   <div class="scanner-glow" />
                 </div>
@@ -268,23 +272,18 @@ watch(isResultsVisible, (visible) => {
               </div>
 
               <!-- Code Generation -->
-              <div
-                v-else
-                key="generating"
-                class="streaming-state"
-              >
+              <div v-else key="generating" class="streaming-state">
                 <div class="streaming-header">
                   <div class="streaming-status">
                     <span class="pulse-dot" />
-                    <span class="status-text">Generating code<span class="dots">...</span></span>
+                    <span class="status-text"
+                      >Generating code<span class="dots">...</span></span
+                    >
                   </div>
                 </div>
 
                 <div class="streaming-output">
-                  <div
-                    ref="outputContainer"
-                    class="output-container"
-                  >
+                  <div ref="outputContainer" class="output-container">
                     <pre class="raw-output">{{ generatedHtml }}<span
 v-if="isStreaming"
                                                                      class="typing-cursor"
@@ -293,57 +292,34 @@ v-if="isStreaming"
                 </div>
 
                 <div class="streaming-stats">
-                  <span class="stat-item">{{ receivedChars.toLocaleString() }} characters generated</span>
-                  <span
-                    v-if="conversionId"
-                    class="stat-item"
-                  >Conversion ID: {{ conversionId.slice(0, 8) }}...</span>
+                  <span class="stat-item"
+                    >{{ receivedChars.toLocaleString() }} characters
+                    generated</span
+                  >
+                  <span v-if="conversionId" class="stat-item"
+                    >Conversion ID: {{ conversionId.slice(0, 8) }}...</span
+                  >
                 </div>
               </div>
             </Transition>
           </div>
 
           <!-- Error State -->
-          <div
-            v-if="error"
-            class="error-state"
-          >
+          <div v-if="error" class="error-state">
             <svg
               class="error-icon"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
             >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke-width="2"
-              />
-              <line
-                x1="12"
-                y1="8"
-                x2="12"
-                y2="12"
-                stroke-width="2"
-              />
-              <line
-                x1="12"
-                y1="16"
-                x2="12.01"
-                y2="16"
-                stroke-width="2"
-              />
+              <circle cx="12" cy="12" r="10" stroke-width="2" />
+              <line x1="12" y1="8" x2="12" y2="12" stroke-width="2" />
+              <line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2" />
             </svg>
             <p class="error-text">
               {{ error }}
             </p>
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="outline"
-              @click="reset"
-            >
+            <UButton size="sm" color="neutral" variant="outline" @click="reset">
               Try Again
             </UButton>
           </div>
@@ -353,10 +329,7 @@ v-if="isStreaming"
             v-if="uploadedImage && !isLoading && !isResultsVisible && !error"
             class="upload-preview"
           >
-            <img
-              :src="uploadedImage"
-              alt="Uploaded screenshot"
-            >
+            <img :src="uploadedImage" alt="Uploaded screenshot" />
             <div class="preview-overlay">
               <UButton
                 size="sm"
@@ -365,12 +338,7 @@ v-if="isStreaming"
               >
                 Convert Now
               </UButton>
-              <UButton
-                size="sm"
-                color="neutral"
-                variant="ghost"
-                @click="reset"
-              >
+              <UButton size="sm" color="neutral" variant="ghost" @click="reset">
                 Change Image
               </UButton>
             </div>
@@ -378,10 +346,7 @@ v-if="isStreaming"
         </div>
 
         <!-- Results Section (shown if user manually navigates back) -->
-        <div
-          v-if="isResultsVisible && generatedHtml"
-          class="results-section"
-        >
+        <div v-if="isResultsVisible && generatedHtml" class="results-section">
           <div class="results-header">
             <div class="results-header-left">
               <h2>Conversion Complete</h2>
@@ -391,10 +356,7 @@ v-if="isStreaming"
                   :class="{ active: activeView === 'preview' }"
                   @click="activeView = 'preview'"
                 >
-                  <UIcon
-                    name="i-lucide-eye"
-                    class="toggle-icon"
-                  />
+                  <UIcon name="i-lucide-eye" class="toggle-icon" />
                   Preview
                 </button>
                 <button
@@ -402,10 +364,7 @@ v-if="isStreaming"
                   :class="{ active: activeView === 'code' }"
                   @click="activeView = 'code'"
                 >
-                  <UIcon
-                    name="i-lucide-code"
-                    class="toggle-icon"
-                  />
+                  <UIcon name="i-lucide-code" class="toggle-icon" />
                   Code
                 </button>
               </div>
@@ -434,29 +393,35 @@ v-if="isStreaming"
           </div>
 
           <div class="result-panel-large">
-            <div
-              class="panel-content-large"
-              :class="activeView"
-            >
+            <div class="panel-content-large" :class="activeView">
               <LivePreview
                 v-if="activeView === 'preview'"
                 :html="generatedHtml"
               />
-              <CodeViewer
-                v-else
-                :html="generatedHtml"
-              />
+              <CodeViewer v-else :html="generatedHtml" />
             </div>
           </div>
         </div>
       </div>
     </section>
+
+    <footer class="footer">
+      <a
+        href="https://twitter.com/DittmannTorsten"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-link"
+      >
+        made by Torsten Dittmann
+      </a>
+    </footer>
   </div>
 </template>
 
 <style>
 /* Global styles */
-html, body {
+html,
+body {
   min-height: 100vh;
 }
 </style>
@@ -523,7 +488,8 @@ html, body {
   left: -10%;
   right: -10%;
   height: 2px;
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     transparent 0%,
     rgba(245, 158, 10, 0.1) 20%,
     #f59e0a 50%,
@@ -543,7 +509,8 @@ html, body {
   left: 0;
   right: 0;
   height: 80px;
-  background: linear-gradient(180deg,
+  background: linear-gradient(
+    180deg,
     transparent 0%,
     rgba(245, 158, 10, 0.05) 30%,
     rgba(245, 158, 10, 0.2) 50%,
@@ -557,17 +524,37 @@ html, body {
 }
 
 @keyframes scanVertical {
-  0% { top: -5%; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { top: 105%; opacity: 0; }
+  0% {
+    top: -5%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 105%;
+    opacity: 0;
+  }
 }
 
 @keyframes scanGlow {
-  0% { top: -10%; opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { top: 110%; opacity: 0; }
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
 }
 
 .processing-text {
@@ -595,7 +582,11 @@ html, body {
   transform: translate(-50%, -50%);
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(245, 158, 10, 0.15) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(245, 158, 10, 0.15) 0%,
+    transparent 70%
+  );
   pointer-events: none;
 }
 
@@ -671,8 +662,15 @@ html, body {
 }
 
 @keyframes glowPulse {
-  0%, 100% { border-color: rgba(245, 158, 10, 0.2); box-shadow: 0 0 0 rgba(245, 158, 10, 0); }
-  50% { border-color: rgba(245, 158, 10, 0.4); box-shadow: 0 0 30px rgba(245, 158, 10, 0.1); }
+  0%,
+  100% {
+    border-color: rgba(245, 158, 10, 0.2);
+    box-shadow: 0 0 0 rgba(245, 158, 10, 0);
+  }
+  50% {
+    border-color: rgba(245, 158, 10, 0.4);
+    box-shadow: 0 0 30px rgba(245, 158, 10, 0.1);
+  }
 }
 
 .streaming-header {
@@ -697,8 +695,13 @@ html, body {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .status-text {
@@ -716,12 +719,16 @@ html, body {
 }
 
 .dots::after {
-  content: '...';
+  content: "...";
 }
 
 @keyframes dots {
-  0% { width: 0; }
-  100% { width: 1em; }
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 1em;
+  }
 }
 
 .streaming-output {
@@ -759,7 +766,7 @@ html, body {
   padding: 20px;
   background: #0d0d0d;
   color: #e4e4e4;
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -777,8 +784,13 @@ html, body {
 }
 
 @keyframes typing {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .streaming-stats {
@@ -949,5 +961,22 @@ html, body {
 
 .panel-content-large.code {
   background: #0d0d0d;
+}
+
+.footer {
+  padding: 40px 24px;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.footer-link {
+  font-size: 14px;
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #f59e0a;
 }
 </style>
