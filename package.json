@@ -23,6 +23,7 @@
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.0",
+    "posthog-js": "^1.336.4",
     "prettier": "^3.8.1",
     "shiki": "^3.22.0",
     "tailwindcss": "^4.1.18",

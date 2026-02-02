@@ -17,7 +17,10 @@ export default defineNuxtConfig({
     tursoToken: process.env.NUXT_TURSO_TOKEN,
     arcjetKey: process.env.NUXT_ARCJET_KEY,
     public: {
-      siteUrl: process.env.NUXT_SITE_URL
+      siteUrl: process.env.NUXT_SITE_URL,
+      posthogPublicKey: 'phc_kxvBY4N35ABcN10M5mFdT0zjHVKiOQdJVSXQ5JYefot',
+      posthogHost: 'https://eu.i.posthog.com',
+      posthogDefaults: '2025-11-30'
     }
   },
 
