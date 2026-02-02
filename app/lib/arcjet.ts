@@ -3,7 +3,7 @@ import arcjet, { tokenBucket } from '@arcjet/node'
 const config = useRuntimeConfig()
 
 export const aj = arcjet({
-  key: config.arcjetKey as string,
+  key: config.arcjetKey,
   rules: [
     tokenBucket({
       mode: 'LIVE',
