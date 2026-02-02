@@ -1,11 +1,11 @@
 <script setup lang="ts">
 const props = defineProps<{
-  id: string
-}>()
+  id: string;
+}>();
 
 const previewUrl = computed(() => {
-  return `/api/preview/${props.id}`
-})
+  return `/api/preview/${props.id}`;
+});
 </script>
 
 <template>
@@ -33,7 +33,6 @@ const previewUrl = computed(() => {
   width: 100%;
   height: 100%;
   border: none;
-  background: white;
   flex: 1;
 }
 </style>
