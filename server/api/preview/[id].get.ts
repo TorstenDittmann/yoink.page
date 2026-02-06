@@ -34,9 +34,7 @@ export default defineEventHandler(async (event) => {
   <style>
     body {
       margin: 0;
-      padding: 20px;
-      min-height: 100vh;
-      background: white;
+      padding: 0;
     }
     * {
       box-sizing: border-box;
